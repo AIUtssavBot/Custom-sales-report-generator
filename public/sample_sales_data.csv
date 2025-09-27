@@ -1,0 +1,17 @@
+Date,Region,Product,Sales,Units,Price,Customer_Type
+2023-01-15,North,Widget A,5200,52,100,Enterprise
+2023-01-22,South,Widget B,3600,45,80,SMB
+2023-01-30,East,Widget A,4800,48,100,Enterprise
+2023-02-05,West,Widget C,6300,70,90,Enterprise
+2023-02-12,North,Widget B,2800,35,80,Consumer
+2023-02-19,South,Widget A,5100,51,100,SMB
+2023-02-26,East,Widget C,5400,60,90,Enterprise
+2023-03-05,West,Widget B,3200,40,80,Consumer
+2023-03-12,North,Widget C,6750,75,90,Enterprise
+2023-03-19,South,Widget A,4900,49,100,SMB
+2023-03-26,East,Widget B,3920,49,80,Consumer
+2023-04-02,West,Widget A,5300,53,100,Enterprise
+2023-04-09,North,Widget C,5850,65,90,SMB
+2023-04-16,South,Widget B,3280,41,80,Consumer
+2023-04-23,East,Widget A,5000,50,100,Enterprise
+2023-04-30,West,Widget C,6300,70,90,SMB
