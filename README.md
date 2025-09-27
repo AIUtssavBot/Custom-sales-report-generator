@@ -226,7 +226,7 @@ Having issues? Need help? Want to tell us how awesome this is?
 
 - 🐛 **Bug Reports**: Open an issue on GitHub
 - 💡 **Feature Requests**: We love new ideas!
-- 📧 **Email**: your-email@domain.com
+- 📧 **Email**: aiml.utssav@gmail.com
 - 💬 **Discussions**: Use GitHub Discussions for questions
 
 ---
