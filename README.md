@@ -8,18 +8,18 @@
 **THIS** is not just another boring dashboard. This is a **FULL-STACK DATA ANALYSIS MONSTER** that will transform your CSV files into beautiful, interactive insights faster than you can say "Big Data"!
 
 ```
-╔══════════════════════════════════════════════════════════=╗
-║  🔥 FEATURES THAT WILL MAKE YOUR DATA DANCE 🔥           ║
-╠═════════════════════════════════════════════════════════=═╣
-║  ⚡ Lightning-fast CSV upload & processing               ║
-║  🤖 AI-powered insights with Google Gemini               ║
-║  📊 Dynamic visualizations that actually make sense      ║
-║  💬 Chat with your data (yes, really!)                   ║
-║  🎨 Beautiful Material-UI components                     ║
-║  📈 Real-time statistical analysis                       ║
-║  🔍 Smart outlier detection                              ║
-║  📋 Professional dashboard creation                      ║
-╚═════════════════════════════════════════════════════════=═╝
+╔══════════════════════════════════════════════════════════╗
+║  🔥 FEATURES THAT WILL MAKE YOUR DATA DANCE 🔥          ║
+╠══════════════════════════════════════════════════════════╣
+║  ⚡ Lightning-fast CSV upload & processing              ║
+║  🤖 AI-powered insights with Google Gemini              ║
+║  📊 Dynamic visualizations that actually make sense     ║
+║  💬 Chat with your data (yes, really!)                  ║
+║  🎨 Beautiful Material-UI components                    ║
+║  📈 Real-time statistical analysis                      ║
+║  🔍 Smart outlier detection                             ║
+║  📋 Professional dashboard creation                     ║
+╚══════════════════════════════════════════════════════════╝
 ```
 
 ---
