@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -21,7 +21,9 @@ import {
   List,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -30,10 +32,14 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import LinkIcon from '@mui/icons-material/Link';
 import WarningIcon from '@mui/icons-material/Warning';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { RootState } from '../../store';
 import { setCurrentView } from '../../store/uiSlice';
 import { detectTimeTrends, findCorrelations, identifyOutliers } from '../../services/aiAnalysis';
+import { geminiAIService, AIInsight, AIChatMessage } from '../../services/geminiAI';
 import { TimeTrend, Correlation, OutlierInfo, Recommendation, Insights } from '../../types';
+import AIInsights from './AIInsights';
+import AIChat from './AIChat';
 
 interface AnalysisProps {
   onCreateDashboard?: () => void;
@@ -48,6 +54,7 @@ interface TabPanelProps {
 interface InsightsPanelProps {
   data: any[];
   columns: any[];
+  datasetInfo: any; // Add datasetInfo prop
 }
 
 const TabPanel = (props: TabPanelProps) => {
@@ -70,10 +77,29 @@ const TabPanel = (props: TabPanelProps) => {
   );
 };
 
-const InsightsPanel: React.FC<InsightsPanelProps> = ({ data, columns }) => {
+const InsightsPanel: React.FC<InsightsPanelProps> = ({ data, columns, datasetInfo }) => {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // AI states
+  const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState<AIChatMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+
+  // Clear chat history when dataset changes
+  useEffect(() => {
+    console.log('Dataset changed, clearing chat history');
+    geminiAIService.clearChatHistory();
+    setChatHistory([]);
+    
+    // Also clear AI insights when dataset changes
+    setAiInsights([]);
+    setInsights(null);
+    setError(null);
+  }, [datasetInfo?.fileName, datasetInfo?.rowCount, datasetInfo?.columnCount]);
 
   const generateAIInsights = () => {
     setLoading(true);
@@ -176,22 +202,128 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ data, columns }) => {
     }
   };
 
+  // Generate AI insights using Gemini
+  const generateGeminiInsights = async () => {
+    setAiLoading(true);
+    try {
+      const datasetInfoForAI = {
+        fileName: datasetInfo?.fileName || 'uploaded_data.csv',
+        rowCount: data.length,
+        columnCount: columns.length,
+        dataQuality: datasetInfo?.dataQuality || {
+          missingValues: 0,
+          duplicateRows: 0
+        }
+      };
+      
+      const insights = await geminiAIService.generateDataInsights(data, columns, datasetInfoForAI);
+      setAiInsights(insights);
+    } catch (error) {
+      console.error('Error generating Gemini insights:', error);
+      setError('Failed to generate AI insights. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Handle AI chat with improved error handling
+  const handleChatMessage = async (message: string): Promise<string> => {
+    console.log('handleChatMessage called with:', message);
+    setChatLoading(true);
+    
+    try {
+      const datasetInfoForChat = {
+        fileName: datasetInfo?.fileName || 'uploaded_data.csv',
+        rowCount: data.length,
+        columnCount: columns.length,
+        dataQuality: datasetInfo?.dataQuality || {
+          missingValues: 0,
+          duplicateRows: 0
+        }
+      };
+      
+      console.log('Calling geminiAIService.chatWithAI...');
+      const response = await geminiAIService.chatWithAI(message, data, columns, datasetInfoForChat);
+      console.log('Response received:', response);
+      
+      setChatHistory(geminiAIService.getChatHistory());
+      return response;
+    } catch (error) {
+      console.error('Error in handleChatMessage:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return `Sorry, I encountered an error: ${errorMessage}. Please check if the AI service is properly configured.`;
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const openChat = () => {
+    setChatOpen(true);
+    // Get the current chat history (will be empty if dataset changed)
+    setChatHistory(geminiAIService.getChatHistory());
+  };
+
+  const closeChat = () => {
+    setChatOpen(false);
+  };
+
   return (
     <Box>
+      {/* Dataset Change Indicator */}
+      {datasetInfo && (
+        <Box sx={{ mb: 2 }}>
+          <Alert severity="info" sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="body2">
+                <strong>Current Dataset:</strong> {datasetInfo.fileName} 
+                ({data.length.toLocaleString()} rows, {columns.length} columns)
+              </Typography>
+            </Box>
+            {chatHistory.length > 0 && (
+              <Chip 
+                label="Chat Active" 
+                color="primary" 
+                size="small" 
+                icon={<SmartToyIcon />}
+              />
+            )}
+          </Alert>
+        </Box>
+      )}
+
       {!insights && !loading && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" gutterBottom>AI-Powered Insights</Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
             Our AI engine will analyze your data to discover patterns, trends, and anomalies.
           </Typography>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={generateAIInsights}
-            startIcon={<LightbulbIcon />}
-          >
-            Generate Insights
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={generateAIInsights}
+              startIcon={<LightbulbIcon />}
+            >
+              Generate Statistical Insights
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              onClick={generateGeminiInsights}
+              startIcon={<SmartToyIcon />}
+            >
+              Generate AI Insights
+            </Button>
+            <Tooltip title="Chat with AI about your data">
+              <IconButton 
+                color="primary" 
+                onClick={openChat}
+                sx={{ border: 1, borderColor: 'primary.main' }}
+              >
+                <SmartToyIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       )}
       
@@ -206,20 +338,43 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ data, columns }) => {
       )}
       
       {error && (
-        <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>
+        <Alert severity="error" sx={{ my: 2 }}>
+          {error}
+          <Button 
+            size="small" 
+            onClick={() => setError(null)}
+            sx={{ ml: 1 }}
+          >
+            Dismiss
+          </Button>
+        </Alert>
       )}
       
       {insights && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h6">AI Analysis Results</Typography>
-            <Button 
-              variant="outlined" 
-              size="small" 
-              onClick={() => setInsights(null)}
-            >
-              New Analysis
-            </Button>
+            <Typography variant="h6">Statistical Analysis Results</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={() => {
+                  setInsights(null);
+                  setError(null);
+                }}
+              >
+                New Analysis
+              </Button>
+              <Tooltip title="Chat with AI about your data">
+                <IconButton 
+                  color="primary" 
+                  onClick={openChat}
+                  sx={{ border: 1, borderColor: 'primary.main' }}
+                >
+                  <SmartToyIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
           
           {insights.recommendations.length > 0 && (
@@ -336,6 +491,18 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({ data, columns }) => {
           )}
         </Box>
       )}
+
+      {/* AI Insights Section */}
+      <AIInsights insights={aiInsights} loading={aiLoading} />
+
+      {/* AI Chat Dialog */}
+      <AIChat
+        open={chatOpen}
+        onClose={closeChat}
+        onSendMessage={handleChatMessage}
+        chatHistory={chatHistory}
+        isLoading={chatLoading}
+      />
     </Box>
   );
 };
@@ -520,7 +687,11 @@ const Analysis: React.FC<AnalysisProps> = ({ onCreateDashboard }) => {
         </TabPanel>
         
         <TabPanel value={tabValue} index={2}>
-          <InsightsPanel data={datasetInfo.data} columns={datasetInfo.columns} />
+          <InsightsPanel 
+            data={datasetInfo.data} 
+            columns={datasetInfo.columns} 
+            datasetInfo={datasetInfo}
+          />
         </TabPanel>
       </Paper>
     </Box>
